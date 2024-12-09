@@ -57,6 +57,7 @@ from fastapi.security.base import SecurityBase
 from fastapi.security.oauth2 import OAuth2, SecurityScopes
 from fastapi.security.open_id_connect_url import OpenIdConnect
 from fastapi.utils import create_model_field, get_path_param_names
+from fastapi.bodies import AnyQueryBody, JSONQueryBody, FormQueryBody, MultipartQueryBody, FileQueryBody
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from starlette.background import BackgroundTasks as StarletteBackgroundTasks
@@ -703,6 +704,16 @@ def _validate_value_with_model_field(
             return None, [get_missing_field_error(loc=loc)]
         else:
             return deepcopy(field.default), []
+    if isinstance(field.type_, AnyQueryBody):
+        return value, []
+    elif isinstance(field.type_, JSONQueryBody) and isinstance(value, dict):
+        return value, []
+    elif isinstance(field.type_, FormQueryBody) and isinstance(value, FormData):
+        return value, []
+    elif isinstance(field.type_, MultipartQueryBody) and isinstance(value, FormData):
+        return value, []
+    elif isinstance(field.type_, FileQueryBody) and isinstance(value, UploadFile):
+        return value, []
     v_, errors_ = field.validate(value, values, loc=loc)
     if isinstance(errors_, ErrorWrapper):
         return None, [errors_]
